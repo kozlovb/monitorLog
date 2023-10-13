@@ -1,6 +1,8 @@
 package main
 
 import (
+	"monitorLog/stats"
+
 	"context"
 	"fmt"
 
@@ -14,7 +16,7 @@ import (
 )
 
 type Display struct {
-	report_chan chan *Report
+	report_chan chan *stats.Report
 	alert_chan  chan *string
 }
 
@@ -26,10 +28,10 @@ func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text
 				panic(err)
 			}
 
-			if err := report_text.Write(fmt.Sprintf("%s\n", "section with the most hits - "+report.section)); err != nil {
+			if err := report_text.Write(fmt.Sprintf("%s\n", "section with the most hits - "+report.Section)); err != nil {
 				panic(err)
 			}
-			if err := report_text.Write(fmt.Sprintf("%s%d\n", "number of hits  - ", report.number_of_hits)); err != nil {
+			if err := report_text.Write(fmt.Sprintf("%s%d\n", "number of hits  - ", report.Number_of_hits)); err != nil {
 				panic(err)
 			}
 		case alert := <-d.alert_chan:
@@ -47,8 +49,8 @@ func (d *Display) debug_listen() {
 		select {
 		case report := <-d.report_chan:
 			fmt.Printf("%s\n", "New Report")
-			fmt.Printf("%s\n", "section with the most hits - "+report.section)
-			fmt.Printf("%s%d\n", "number of hits  - ", report.number_of_hits)
+			fmt.Printf("%s\n", "section with the most hits - "+report.Section)
+			fmt.Printf("%s%d\n", "number of hits  - ", report.Number_of_hits)
 		case m := <-d.alert_chan:
 			fmt.Println(*m)
 

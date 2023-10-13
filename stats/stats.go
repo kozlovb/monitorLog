@@ -1,4 +1,4 @@
-package main
+package stats
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ type SectionMapEntry struct {
 }
 
 type Report struct {
-	number_of_hits   int
-	section          string
-	ip_from          string
-	hits_from_max_ip int
+	Number_of_hits   int
+	Section          string
+	Ip_from          string
+	Hits_from_max_ip int
 }
 
 type Statistics struct {
@@ -58,7 +58,7 @@ func (s *Statistics) RegisterEntry(entry *parser.Entity) {
 
 func (s *Statistics) Report() *Report {
 	ip_from_max_hits, max_hits_from_this_ip := s.findMaxIP(&s.curent_max_section)
-	return &Report{number_of_hits: s.current_max_hits, section: s.curent_max_section, ip_from: ip_from_max_hits, hits_from_max_ip: max_hits_from_this_ip}
+	return &Report{Number_of_hits: s.current_max_hits, Section: s.curent_max_section, Ip_from: ip_from_max_hits, Hits_from_max_ip: max_hits_from_this_ip}
 }
 
 // TODO when * and when copy of a class ?

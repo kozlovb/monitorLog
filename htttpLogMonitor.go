@@ -2,6 +2,7 @@ package main
 
 import (
 	"monitorLog/parser"
+	"monitorLog/stats"
 	"time"
 )
 
@@ -11,8 +12,8 @@ type HttpLogMonitor struct {
 	time_interval_traffic_average time.Duration
 	threshold_traffic_alert       int
 	alert                         *Alarm
-	stats                         *Statistics
-	report_display_chan           chan *Report
+	stats                         *stats.Statistics
+	report_display_chan           chan *stats.Report
 	alert_display_chan            chan *string
 	display                       Display
 }
@@ -20,7 +21,7 @@ type HttpLogMonitor struct {
 // TODO when *HttpLogMonitor and when not
 func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_average time.Duration, threshold_traffic_alert int) *HttpLogMonitor {
 	//TODO remove this channels from monitor can be in a display contructor
-	report_display_chan := make(chan *Report)
+	report_display_chan := make(chan *stats.Report)
 	alert_chan := make(chan *string)
 
 	return &HttpLogMonitor{
@@ -28,7 +29,7 @@ func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_
 		time_interval_traffic_average: time_interval_traffic_average,
 		threshold_traffic_alert:       threshold_traffic_alert,
 		alert:                         NewAlarm(int(time_interval_traffic_average.Seconds()), threshold_traffic_alert),
-		stats:                         NewStatistics(),
+		stats:                         stats.NewStatistics(),
 		report_display_chan:           report_display_chan,
 		alert_display_chan:            alert_chan,
 		display:                       Display{report_chan: report_display_chan, alert_chan: alert_chan},
