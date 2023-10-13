@@ -1,6 +1,7 @@
 package main
 
 import (
+	"monitorLog/parser"
 	"time"
 )
 
@@ -35,8 +36,8 @@ func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_
 }
 
 func (h *HttpLogMonitor) Start(log_file_name *string) {
-	return_channel := make(chan *Entity)
-	r := Reader{file_name: log_file_name, return_channel: return_channel, parser: NewParser()}
+	return_channel := make(chan *parser.Entity)
+	r := Reader{file_name: log_file_name, return_channel: return_channel, parser: parser.NewParser()}
 	go r.Read()
 	go h.run(return_channel)
 	h.display.debug_display()
@@ -47,8 +48,7 @@ func (h *HttpLogMonitor) Stop() {
 }
 
 // todo specify that its input only
-func (h *HttpLogMonitor) run(read_channel chan *Entity) {
-
+func (h *HttpLogMonitor) run(read_channel chan *parser.Entity) {
 	// can be customized to return average for less than 2 seconds
 
 	alarm_state := false
@@ -65,28 +65,29 @@ func (h *HttpLogMonitor) run(read_channel chan *Entity) {
 			//fmt.Println("lne number ", line_number)
 			line_number += 1
 			//alarm state class field ?
-			h.alert.RegisterEntry(c.timestamp)
+
+			h.alert.RegisterEntry(c.Timestamp)
 			alarm_state = h.alert.GetAlarmState()
 			if previous_report_time == 0 {
-				previous_report_time = c.timestamp
+				previous_report_time = c.Timestamp
 			}
 			//alarm to alert
 			if alarm_state != previous_alert_state {
 
 				if alarm_state {
-					a := h.alert.generateAlarmMsg(c.timestamp)
+					a := h.alert.generateAlarmMsg(c.Timestamp)
 					h.display.alert_chan <- &a
 				} else {
-					a := h.alert.generateRecoveryAlarmMsg(c.timestamp)
+					a := h.alert.generateRecoveryAlarmMsg(c.Timestamp)
 					h.display.alert_chan <- &a
 				}
 
 				previous_alert_state = alarm_state
 			}
-			if c.timestamp > previous_report_time+int(time_interval_stats.Seconds()) {
+			if c.Timestamp > previous_report_time+int(time_interval_stats.Seconds()) {
 				h.display.report_chan <- h.stats.Report()
 				h.stats.Clear()
-				previous_report_time = c.timestamp
+				previous_report_time = c.Timestamp
 			}
 
 			h.stats.RegisterEntry(c)

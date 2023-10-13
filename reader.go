@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"monitorLog/parser"
 	"os"
 )
 
@@ -17,19 +18,8 @@ import (
 type Reader struct {
 	//parser   *logparser.HTTPd
 	file_name      *string
-	return_channel chan *Entity
-	parser         *Parser
-}
-
-type Entity struct {
-	ip_address       string
-	user_identifier  string
-	remote_user_name string
-	timestamp        int
-	request          string
-	section          string
-	http_status_code int
-	response_size    int
+	return_channel chan *parser.Entity
+	parser         *parser.Parser
 }
 
 func (m *Reader) Read() {

@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"monitorLog/parser"
+)
 
 type SectionMapEntry struct {
 	number_of_hits  int
@@ -18,7 +21,7 @@ type Statistics struct {
 	hits_map           map[string]*SectionMapEntry
 	curent_max_section string
 	current_max_hits   int
-	entries            []*Entity
+	entries            []*parser.Entity
 }
 
 func NewStatistics() *Statistics {
@@ -26,29 +29,29 @@ func NewStatistics() *Statistics {
 		hits_map:           make(map[string]*SectionMapEntry),
 		curent_max_section: "",
 		current_max_hits:   0,
-		entries:            make([]*Entity, 0),
+		entries:            make([]*parser.Entity, 0),
 	}
 }
 
 // what this is supposed to do ?
 
-func (s *Statistics) RegisterEntry(entry *Entity) {
+func (s *Statistics) RegisterEntry(entry *parser.Entity) {
 	//how to register en entry ?
 	s.entries = append(s.entries, entry)
 	last_entry_index := len(s.entries) - 1
 
 	new_count := 0
-	if sectionEntry, ok := s.hits_map[entry.section]; ok {
+	if sectionEntry, ok := s.hits_map[entry.Section]; ok {
 		new_count = sectionEntry.number_of_hits + 1
 		sectionEntry.number_of_hits = new_count
 
 		sectionEntry.indexes_entries = append(sectionEntry.indexes_entries, last_entry_index)
 	} else {
 		new_count = 1
-		s.hits_map[entry.section] = &SectionMapEntry{number_of_hits: new_count, indexes_entries: []int{last_entry_index}}
+		s.hits_map[entry.Section] = &SectionMapEntry{number_of_hits: new_count, indexes_entries: []int{last_entry_index}}
 	}
 	if new_count > s.current_max_hits {
-		s.curent_max_section = entry.section
+		s.curent_max_section = entry.Section
 		s.current_max_hits = new_count
 	}
 }
@@ -70,7 +73,7 @@ func (s *Statistics) findMaxIP(section *string) (string, int) {
 	ip_map := make(map[string]int)
 	//for index, value := range numbers {
 	for _, index_in_entries := range section_entry.indexes_entries {
-		ip := s.entries[index_in_entries].ip_address
+		ip := s.entries[index_in_entries].Ip_address
 		new_req_from := 0
 		if requests_from, ok := ip_map[ip]; ok {
 			//TODO check in debugger if it updates the map

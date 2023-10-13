@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"fmt"
@@ -15,6 +15,17 @@ const (
 
 type Parser struct {
 	gonx_parser *gonx.Parser
+}
+
+type Entity struct {
+	Ip_address       string
+	User_identifier  string
+	Remote_user_name string
+	Timestamp        int
+	Request          string
+	Section          string
+	Http_status_code int
+	Response_size    int
 }
 
 func NewParser() *Parser {
@@ -104,14 +115,14 @@ func (p *Parser) ParseLogString(log_string string) (*Entity, error) {
 		return nil, err
 	}
 
-	return &Entity{ip_address: remote_address,
-		user_identifier:  user_identifier,
-		remote_user_name: remote_user_name,
-		timestamp:        timestamp_int,
-		request:          request,
-		section:          section,
-		http_status_code: http_status_code_int,
-		response_size:    response_size_int}, nil
+	return &Entity{Ip_address: remote_address,
+		User_identifier:  user_identifier,
+		Remote_user_name: remote_user_name,
+		Timestamp:        timestamp_int,
+		Request:          request,
+		Section:          section,
+		Http_status_code: http_status_code_int,
+		Response_size:    response_size_int}, nil
 }
 
 // getSectionFromPath returns a section from a resource path. If resource doesn't start

@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"errors"
@@ -23,14 +23,14 @@ func Test_parseLogString(t *testing.T) {
 		{"valid_log_entry",
 			"\"10.0.0.2\",\"-\",\"apache\",1549573859,\"GET /api/user HTTP/1.0\",200,1234",
 			&Entity{
-				ip_address:       "10.0.0.2",
-				user_identifier:  "-",
-				remote_user_name: "apache",
-				timestamp:        1549573859,
-				request:          "GET /api/user HTTP/1.0",
-				section:          "/api",
-				http_status_code: 200,
-				response_size:    1234,
+				Ip_address:       "10.0.0.2",
+				User_identifier:  "-",
+				Remote_user_name: "apache",
+				Timestamp:        1549573859,
+				Request:          "GET /api/user HTTP/1.0",
+				Section:          "/api",
+				Http_status_code: 200,
+				Response_size:    1234,
 			},
 			nil,
 		},
