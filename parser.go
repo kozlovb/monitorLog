@@ -1,10 +1,8 @@
 package main
 
-// reader parser ?
 import (
-	"bufio"
 	"fmt"
-	"os"
+
 	"strconv"
 	"strings"
 
@@ -12,128 +10,122 @@ import (
 )
 
 const (
-	// put example here
-	format2 = `$remote_addr,$user_identifier,$remote_user,$time_local,"$request",$status,$bytes_sent`
+	format = `"$remote_addr","$user_identifier","$remote_user",$time_local,"$request",$status,$bytes_sent`
 )
 
-//"remotehost","rfc931","authuser","date","request","status","bytes"
-//"10.0.0.2","-","apache",1549573860,"GET /api/user HTTP/1.0",200,1234
-
-// Who passes channel to who ?
-// take parcer from the other solution
-
-// introduce tailermay be later
-// extend to take parser as an argument probably an interface
-// TODO thouyghts if file is slow to get read out
-type Reader struct {
-	//parser   *logparser.HTTPd
-	file_name      *string
-	return_channel chan *Entity
+type Parser struct {
+	gonx_parser *gonx.Parser
 }
 
-// tODO rename to reader ?
-type Entity struct {
-	ip_address       string
-	user_identifier  string
-	remote_user_name string
-	timestamp        int
-	request          string
-	section          string
-	http_status_code int
-	response_size    int
-}
-
-func (m *Reader) Read() {
-	// Create a parser
-	parser := gonx.NewParser(format2)
-	file, _ := os.Open(*m.file_name)
-	//if err != nil
-	//{
-	// log.Fatal(err)
-	//}
-	defer file.Close()
-	defer close(m.return_channel)
-
-	scanner := bufio.NewScanner(file)
-	// optionally, resize scanner's capacity for lines over 64K, see next example
-
-	for scanner.Scan() {
-
-		//fmt.Println(scanner.Text())
-		logLine := scanner.Text()
-		//will this tring survive ?
-
-		// Parse the log line
-		entry, err := parser.ParseString(logLine)
-		if err != nil {
-			fmt.Println("Error parsing log line:", err)
-			//TODO ignore first lne
-			continue
-		}
-
-		//TODO - what to do with a second entry ?
-
-		// Access parsed fields
-		ipAddress, _ := entry.Field("remote_addr")
-		user_identifier, _ := entry.Field("user_identifier")
-		remote_user_name, _ := entry.Field("remote_user")
-		timestamp, _ := entry.Field("time_local")
-		request, _ := entry.Field("request")
-		request_detailed := strings.Fields(request)
-
-		//10.0.0.4","-","apache",1549574334,"POST /report HTTP/1.0",404,1307
-
-		//TODO print error
-		if len(request_detailed) != 3 {
-			continue
-			//return fmt.Errorf("Invalid structure of request part: %s", request_detailed)
-		}
-
-		//r.Method = parts[0]
-		path := request_detailed[1]
-		section, _ := getSectionFromResource(path)
-		// TODO error tretment
-		//r.Protocol = parts[2]
-
-		statusCode, _ := entry.Field("status")
-		responseSize, _ := entry.Field("body_bytes_sent")
-
-		// Print parsed fields
-		// `$remote_addr,$user_identifier,$remote_user,$time_local,"$request",$status,$bytes_sent`
-
-		timestamp_int, _ := strconv.Atoi(timestamp)
-		http_status_code_int, _ := strconv.Atoi(statusCode)
-		response_size_int, _ := strconv.Atoi(responseSize)
-
-		m.return_channel <- &Entity{ip_address: ipAddress,
-			user_identifier:  user_identifier,
-			remote_user_name: remote_user_name,
-			timestamp:        timestamp_int,
-			request:          request,
-			section:          section,
-			http_status_code: http_status_code_int,
-			response_size:    response_size_int}
-
+func NewParser() *Parser {
+	return &Parser{
+		gonx_parser: gonx.NewParser(format),
 	}
-	/*
-		if err := scanner.Err(); err != nil {
-			log.Fatal(err)
-		}*/
 }
 
-// getSectionFromResource returns a section from a resource path.
-// A section is defined as being what's before the second '/' in the resource section.
-// Eg. the section for '/pages/create' is '/pages'.
-// Returns an error if the path is the empty string
-func getSectionFromResource(path string) (string, error) {
+// This func parses the following log entiries
+// 10.0.0.4","-","apache",1549574334,"POST /report HTTP/1.0",404,1307
+func (p *Parser) ParseLogString(log_string string) (*Entity, error) {
 
-	// TODO rewrite this shit to avoid plagiat copmpain
-	if !strings.HasPrefix(path, "/") { // Reject paths that don't start with /
-		return "", fmt.Errorf("cannot get section from path %s", path)
+	entry, err := p.gonx_parser.ParseString(log_string)
+	if err != nil {
+		return nil, err
 	}
-	// Remove leading "/" since I'm sure it's there
-	stripped := strings.TrimLeft(path, "/")
-	// Split on middle "/"s and take the first
-	split := strings.Split(stripped, "/")
-	return "/" + split[0], nil
+
+	remote_address, err := entry.Field("remote_addr")
+	if err != nil {
+		fmt.Printf("Error parcing a remote_addr field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	user_identifier, err := entry.Field("user_identifier")
+	if err != nil {
+		fmt.Printf("Error parsing a user_identifier field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	remote_user_name, err := entry.Field("remote_user")
+	if err != nil {
+		fmt.Printf("Error parsing a remote_user field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	timestamp, err := entry.Field("time_local")
+	if err != nil {
+		fmt.Printf("Error parsing a time_local field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	request, err := entry.Field("request")
+	if err != nil {
+		fmt.Printf("Error parsing a request field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	request_detailed := strings.Fields(request)
+
+	if len(request_detailed) != 3 {
+		return nil, fmt.Errorf("Invalid structure of request part: %s of log string: %s", request_detailed, log_string)
+	}
+
+	path := request_detailed[1]
+	section, err := getSectionFromPath(path)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing a request field for a log string %s, error: %v\n", log_string, err)
+	}
+
+	statusCode, err := entry.Field("status")
+	if err != nil {
+		fmt.Printf("Error parsing a status field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	responseSize, err := entry.Field("bytes_sent")
+	if err != nil {
+		fmt.Printf("Error parsing a bytes_sent field for a log string %s, error: %v\n", log_string, err)
+		return nil, err
+	}
+
+	timestamp_int, err := strconv.Atoi(timestamp)
+	if err != nil {
+		fmt.Printf("Couldn't convert to int a timestamp %s of a log string %s, error: %v\n", timestamp, log_string, err)
+		return nil, err
+	}
+
+	http_status_code_int, err := strconv.Atoi(statusCode)
+	if err != nil {
+		fmt.Printf("Couldn't convert to int a statusCode %s of a log string %s, error: %v\n", statusCode, log_string, err)
+		return nil, err
+	}
+
+	response_size_int, err := strconv.Atoi(responseSize)
+	if err != nil {
+		fmt.Printf("Couldn't convert to int a responseSize %s of a log string %s, error: %v\n", responseSize, log_string, err)
+		return nil, err
+	}
+
+	return &Entity{ip_address: remote_address,
+		user_identifier:  user_identifier,
+		remote_user_name: remote_user_name,
+		timestamp:        timestamp_int,
+		request:          request,
+		section:          section,
+		http_status_code: http_status_code_int,
+		response_size:    response_size_int}, nil
+}
+
+// getSectionFromPath returns a section from a resource path. If resource doesn't start
+// with "/" the error is returned if there is more than one "/" then the content before the
+// second "/" is returned. If there is only one "/"then he whole string is a section.
+// "/api/report" returns "/api"
+// "/api" returns "/api"
+func getSectionFromPath(path string) (string, error) {
+	if len(path) == 0 || path[0] != '/' {
+		return "", fmt.Errorf("bad format of resource %s", path)
+	}
+	split_groups := strings.Split(path, "/")
+	if len(split_groups) == 1 {
+		return "/" + split_groups[0], nil
+	}
+	return "/" + split_groups[1], nil
 }

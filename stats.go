@@ -2,8 +2,6 @@ package main
 
 import "fmt"
 
-// there ll be like a slic e with all log entries before flush
-// section -> hits, slice of indexes in the main slice
 type SectionMapEntry struct {
 	number_of_hits  int
 	indexes_entries []int

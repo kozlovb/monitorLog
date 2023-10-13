@@ -36,10 +36,10 @@ func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_
 
 func (h *HttpLogMonitor) Start(log_file_name *string) {
 	return_channel := make(chan *Entity)
-	r := Reader{file_name: log_file_name, return_channel: return_channel}
+	r := Reader{file_name: log_file_name, return_channel: return_channel, parser: NewParser()}
 	go r.Read()
 	go h.run(return_channel)
-	h.display.display()
+	h.display.debug_display()
 }
 
 func (h *HttpLogMonitor) Stop() {
