@@ -11,9 +11,6 @@ func Test_parseLogString(t *testing.T) {
 
 	parser := NewParser()
 
-	type args struct {
-		input string
-	}
 	tests := []struct {
 		name           string
 		input          string

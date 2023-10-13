@@ -1,4 +1,4 @@
-package main
+package alarm
 
 import (
 	"container/list"
@@ -68,13 +68,13 @@ func (a *Alarm) GetAverageRequestPerSecond() float64 {
 	return float64(a.total_hits) / float64(a.time_interval_for_average)
 }
 
-func (a *Alarm) generateAlarmMsg(timestamp int) string {
+func (a *Alarm) GenerateAlarmMsg(timestamp int) string {
 	triggeredTime := time.Unix(int64(timestamp), 0).UTC()
 	alertMessage := fmt.Sprintf("High traffic generated an alert - hits = %.2f, triggered at %s", a.GetAverageRequestPerSecond(), triggeredTime.Format(time.RFC3339))
 	return alertMessage
 }
 
-func (a *Alarm) generateRecoveryAlarmMsg(timestamp int) string {
+func (a *Alarm) GenerateRecoveryAlarmMsg(timestamp int) string {
 	triggeredTime := time.Unix(int64(timestamp), 0).UTC()
 	alertMessage := fmt.Sprintf("Traffic has recovered - hits = %.2f, recovered at %s", a.GetAverageRequestPerSecond(), triggeredTime.Format(time.RFC3339))
 	return alertMessage

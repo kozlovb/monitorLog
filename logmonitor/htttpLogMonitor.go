@@ -1,7 +1,10 @@
-package main
+package logmonitor
 
 import (
+	"monitorLog/alarm"
+	"monitorLog/display"
 	"monitorLog/parser"
+	"monitorLog/reader"
 	"monitorLog/stats"
 	"time"
 )
@@ -11,11 +14,11 @@ type HttpLogMonitor struct {
 	time_interval_stats           time.Duration
 	time_interval_traffic_average time.Duration
 	threshold_traffic_alert       int
-	alert                         *Alarm
+	alert                         *alarm.Alarm
 	stats                         *stats.Statistics
 	report_display_chan           chan *stats.Report
 	alert_display_chan            chan *string
-	display                       Display
+	display                       display.Display
 }
 
 // TODO when *HttpLogMonitor and when not
@@ -28,32 +31,26 @@ func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_
 		time_interval_stats:           time_interval_stats,
 		time_interval_traffic_average: time_interval_traffic_average,
 		threshold_traffic_alert:       threshold_traffic_alert,
-		alert:                         NewAlarm(int(time_interval_traffic_average.Seconds()), threshold_traffic_alert),
+		alert:                         alarm.NewAlarm(int(time_interval_traffic_average.Seconds()), threshold_traffic_alert),
 		stats:                         stats.NewStatistics(),
 		report_display_chan:           report_display_chan,
 		alert_display_chan:            alert_chan,
-		display:                       Display{report_chan: report_display_chan, alert_chan: alert_chan},
+		display:                       display.Display{Report_chan: report_display_chan, Alert_chan: alert_chan},
 	}
 }
 
 func (h *HttpLogMonitor) Start(log_file_name *string) {
 	return_channel := make(chan *parser.Entity)
-	r := Reader{file_name: log_file_name, return_channel: return_channel, parser: parser.NewParser()}
+	r := reader.Reader{File_name: log_file_name, Return_channel: return_channel, Parser: parser.NewParser()}
 	go r.Read()
 	go h.run(return_channel)
-	h.display.debug_display()
-}
-
-func (h *HttpLogMonitor) Stop() {
-	// TODO may be like a stop channel
+	h.display.Display()
 }
 
 // todo specify that its input only
 func (h *HttpLogMonitor) run(read_channel chan *parser.Entity) {
 	// can be customized to return average for less than 2 seconds
-
 	alarm_state := false
-	done := make(chan bool, 1)
 	//relative_log_file_time := 0 //timein log can run faster than in a file
 	iterationIndex := 0
 	previous_report_time := 0
@@ -62,10 +59,13 @@ func (h *HttpLogMonitor) run(read_channel chan *parser.Entity) {
 	previous_alert_state := false
 	for {
 		select {
-		case c := <-read_channel:
-			//fmt.Println("lne number ", line_number)
+		case c, ok := <-read_channel:
+
+			if !ok {
+				return
+			}
+
 			line_number += 1
-			//alarm state class field ?
 
 			h.alert.RegisterEntry(c.Timestamp)
 			alarm_state = h.alert.GetAlarmState()
@@ -76,28 +76,21 @@ func (h *HttpLogMonitor) run(read_channel chan *parser.Entity) {
 			if alarm_state != previous_alert_state {
 
 				if alarm_state {
-					a := h.alert.generateAlarmMsg(c.Timestamp)
-					h.display.alert_chan <- &a
+					a := h.alert.GenerateAlarmMsg(c.Timestamp)
+					h.display.Alert_chan <- &a
 				} else {
-					a := h.alert.generateRecoveryAlarmMsg(c.Timestamp)
-					h.display.alert_chan <- &a
+					a := h.alert.GenerateRecoveryAlarmMsg(c.Timestamp)
+					h.display.Alert_chan <- &a
 				}
-
 				previous_alert_state = alarm_state
 			}
-			if c.Timestamp > previous_report_time+int(time_interval_stats.Seconds()) {
-				h.display.report_chan <- h.stats.Report()
+			if c.Timestamp > previous_report_time+int(h.time_interval_stats.Seconds()) {
+				h.display.Report_chan <- h.stats.Report()
 				h.stats.Clear()
 				previous_report_time = c.Timestamp
 			}
-
 			h.stats.RegisterEntry(c)
 			iterationIndex++
-			if iterationIndex >= 4828 {
-				done <- true
-			}
-		case <-done:
-			return
 		}
 	}
 }

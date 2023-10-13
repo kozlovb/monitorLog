@@ -1,4 +1,4 @@
-package main
+package reader
 
 import (
 	"bufio"
@@ -17,30 +17,28 @@ import (
 // TODO thouyghts if file is slow to get read out
 type Reader struct {
 	//parser   *logparser.HTTPd
-	file_name      *string
-	return_channel chan *parser.Entity
-	parser         *parser.Parser
+	File_name      *string
+	Return_channel chan *parser.Entity
+	Parser         *parser.Parser
 }
 
 func (m *Reader) Read() {
-	// Create a parser
-
-	file, err := os.Open(*m.file_name)
+	file, err := os.Open(*m.File_name)
 	if err != nil {
 		fmt.Println("Error opening file a parser", err)
 	}
 	defer file.Close()
-	defer close(m.return_channel)
+	defer close(m.Return_channel)
 
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		log_string := scanner.Text()
-		parsed_entry, err := m.parser.ParseLogString(log_string)
+		parsed_entry, err := m.Parser.ParseLogString(log_string)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			m.return_channel <- parsed_entry
+			m.Return_channel <- parsed_entry
 		}
 	}
 

@@ -1,4 +1,4 @@
-package main
+package display
 
 import (
 	"monitorLog/stats"
@@ -16,14 +16,14 @@ import (
 )
 
 type Display struct {
-	report_chan chan *stats.Report
-	alert_chan  chan *string
+	Report_chan chan *stats.Report
+	Alert_chan  chan *string
 }
 
 func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text *text.Text) {
 	for {
 		select {
-		case report := <-d.report_chan:
+		case report := <-d.Report_chan:
 			if err := report_text.Write(fmt.Sprintf("%s\n", "New Report")); err != nil {
 				panic(err)
 			}
@@ -34,7 +34,7 @@ func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text
 			if err := report_text.Write(fmt.Sprintf("%s%d\n", "number of hits  - ", report.Number_of_hits)); err != nil {
 				panic(err)
 			}
-		case alert := <-d.alert_chan:
+		case alert := <-d.Alert_chan:
 			if err := alert_text.Write(fmt.Sprintf("%s\n", *alert)); err != nil {
 				panic(err)
 			}
@@ -47,23 +47,23 @@ func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text
 func (d *Display) debug_listen() {
 	for {
 		select {
-		case report := <-d.report_chan:
+		case report := <-d.Report_chan:
 			fmt.Printf("%s\n", "New Report")
 			fmt.Printf("%s\n", "section with the most hits - "+report.Section)
 			fmt.Printf("%s%d\n", "number of hits  - ", report.Number_of_hits)
-		case m := <-d.alert_chan:
+		case m := <-d.Alert_chan:
 			fmt.Println(*m)
 
 		}
 	}
 }
-func (d *Display) debug_display() {
+func (d *Display) Debug_display() {
 	go d.debug_listen()
 	for {
 	}
 }
 
-func (d *Display) display() {
+func (d *Display) Display() {
 	t, err := tcell.New()
 	if err != nil {
 		panic(err)
@@ -114,5 +114,4 @@ func (d *Display) display() {
 	if err := termdash.Run(ctx, t, c, termdash.KeyboardSubscriber(quitter)); err != nil {
 		panic(err)
 	}
-
 }
