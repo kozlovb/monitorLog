@@ -32,7 +32,12 @@ func (m *Reader) Read() {
 
 	scanner := bufio.NewScanner(file)
 
+	first_line := true
 	for scanner.Scan() {
+		if first_line {
+			first_line = false
+			continue
+		}
 		log_string := scanner.Text()
 		parsed_entry, err := m.Parser.ParseLogString(log_string)
 		if err != nil {

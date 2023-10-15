@@ -10,7 +10,7 @@ func Test_retriveReport(t *testing.T) {
 
 	stats := NewStatistics()
 
-	entities := [...]parser.Entity{parser.Entity{
+	entities := [...]parser.Entity{{
 		Ip_address:       "10.0.0.2",
 		User_identifier:  "-",
 		Remote_user_name: "apache",
@@ -20,7 +20,7 @@ func Test_retriveReport(t *testing.T) {
 		Http_status_code: 200,
 		Response_size:    1234,
 	},
-		parser.Entity{
+		{
 			Ip_address:       "10.0.0.1",
 			User_identifier:  "-",
 			Remote_user_name: "apache",
@@ -30,7 +30,7 @@ func Test_retriveReport(t *testing.T) {
 			Http_status_code: 200,
 			Response_size:    1234,
 		},
-		parser.Entity{
+		{
 			Ip_address:       "10.0.0.2",
 			User_identifier:  "-",
 			Remote_user_name: "apache",
