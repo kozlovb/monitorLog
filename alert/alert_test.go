@@ -22,7 +22,25 @@ func checkAverageEquals(t *testing.T, a *Alert, expected_average float64) {
 	require.InDelta(t, expected_average, actual_req_per_econd, 0.01, "Expected average request per second: %.2f is not within 0.01 margin of the actual one: %.2f\n", expected_average, actual_req_per_econd)
 }
 
-func Test_alerState(t *testing.T) {
+func Test_alertSimpleLog(t *testing.T) {
+	timeInterval := 2
+	threshold := 1
+
+	alert := NewAlert(timeInterval, threshold)
+	alert.RegisterEntry(0)
+	alert.RegisterEntry(1)
+	checkAlert(t, alert, false)
+	checkAverageEquals(t, alert, 1)
+
+	alert.RegisterEntry(2)
+	checkAlert(t, alert, false)
+	checkAverageEquals(t, alert, 1)
+	alert.RegisterEntry(2)
+	checkAlert(t, alert, true)
+	checkAverageEquals(t, alert, 1.5)
+}
+
+func Test_alerOrderedLogs(t *testing.T) {
 
 	timeInterval := 10
 	threshold := 1
@@ -49,4 +67,19 @@ func Test_alerState(t *testing.T) {
 
 	checkAlert(t, alert, false)
 	checkAverageEquals(t, alert, 0.1)
+}
+
+func Test_alerUnOrderedLogs(t *testing.T) {
+
+	timeInterval := 10
+	threshold := 1
+
+	alert := NewAlert(timeInterval, threshold)
+
+	registerTimestampTimes(0, 9, alert)
+	registerTimestampTimes(1, 1, alert)
+	registerTimestampTimes(0, 1, alert)
+
+	checkAlert(t, alert, true)
+	checkAverageEquals(t, alert, 1.1)
 }
