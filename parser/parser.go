@@ -28,6 +28,7 @@ type Entity struct {
 	Response_size    int
 }
 
+// Returns a pointer to a new parser
 func NewParser() *Parser {
 	return &Parser{
 		gonx_parser: gonx.NewParser(format),

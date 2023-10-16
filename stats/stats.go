@@ -36,8 +36,10 @@ func NewStatistics() *Statistics {
 	}
 }
 
+// Registers a new entry to the statistics struct.
 func (s *Statistics) RegisterEntry(entry *parser.Entity) {
 	s.entries = append(s.entries, entry)
+
 	last_entry_index := len(s.entries) - 1
 	new_count := 0
 	if sectionEntry, ok := s.hits_map[entry.Section]; ok {
@@ -54,11 +56,13 @@ func (s *Statistics) RegisterEntry(entry *parser.Entity) {
 	}
 }
 
+// Reports the statistics for the currently registered entries.
 func (s *Statistics) Report() *Report {
 	ip_from_max_hits, max_hits_from_this_ip := s.findMaxIPbyHits(&s.curent_max_section)
 	return &Report{Number_of_hits: s.current_max_hits, Section: s.curent_max_section, Ip_from: ip_from_max_hits, Hits_from_max_ip: max_hits_from_this_ip}
 }
 
+// Finds an IP adresse that provided the most hits for the given section.
 func (s *Statistics) findMaxIPbyHits(section *string) (string, int) {
 	section_entry, ok := s.hits_map[*section]
 	if !ok {
@@ -85,6 +89,7 @@ func (s *Statistics) findMaxIPbyHits(section *string) (string, int) {
 	return current_max_ip, current_max_hits
 }
 
+// Clears the statistics struct
 func (s *Statistics) Clear() {
 	s.hits_map = make(map[string]*SectionMapEntry)
 	s.curent_max_section = ""

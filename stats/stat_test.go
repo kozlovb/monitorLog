@@ -10,6 +10,7 @@ func Test_retriveReport(t *testing.T) {
 
 	stats := NewStatistics()
 
+	// entries are not sorted by time
 	entities := [...]parser.Entity{{
 		Ip_address:       "10.0.0.2",
 		User_identifier:  "-",
@@ -24,7 +25,7 @@ func Test_retriveReport(t *testing.T) {
 			Ip_address:       "10.0.0.1",
 			User_identifier:  "-",
 			Remote_user_name: "apache",
-			Timestamp:        1549573859,
+			Timestamp:        1549573860,
 			Request:          "GET /api/user HTTP/1.0",
 			Section:          "/report",
 			Http_status_code: 200,
