@@ -27,11 +27,16 @@ func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text
 			if err := report_text.Write(fmt.Sprintf("%s\n", "New Report")); err != nil {
 				panic(err)
 			}
-
 			if err := report_text.Write(fmt.Sprintf("%s\n", "section with the most hits - "+report.Section)); err != nil {
 				panic(err)
 			}
 			if err := report_text.Write(fmt.Sprintf("%s%d\n", "number of hits  - ", report.Number_of_hits)); err != nil {
+				panic(err)
+			}
+			if err := report_text.Write(fmt.Sprintf("%s%s\n", "IP responsible for most of the hits   - ", report.Ip_from)); err != nil {
+				panic(err)
+			}
+			if err := report_text.Write(fmt.Sprintf("%s%d\n", "hits from this ip   - ", report.Hits_from_max_ip)); err != nil {
 				panic(err)
 			}
 		case alert := <-d.Alert_chan:
@@ -51,12 +56,16 @@ func (d *Display) debug_listen() {
 			fmt.Printf("%s\n", "New Report")
 			fmt.Printf("%s\n", "section with the most hits - "+report.Section)
 			fmt.Printf("%s%d\n", "number of hits  - ", report.Number_of_hits)
+			fmt.Printf("%s%s\n", "Ip from which came most of the hits  - ", report.Ip_from)
+			fmt.Printf("%s%s\n", "hits from this ip  - ", report.Ip_from)
 		case m := <-d.Alert_chan:
 			fmt.Println(*m)
-
 		}
 	}
 }
+
+// switch Display() to Debug_display() in HttpLogMonitor::Start() in order to be
+// able to debug in VCcode as otherwise termdash make it crash
 func (d *Display) Debug_display() {
 	go d.debug_listen()
 	for {
