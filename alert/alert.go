@@ -29,27 +29,9 @@ func NewAlert(timeInterval int, threshold int) *Alert {
 	}
 }
 
-func (a *Alert) RegisterEntry(timestamp int) bool {
-
-	lastElement := a.container_for_logs_sliding_window.Back()
-	var last_value AlertEntry
-	var ok bool
-
-	if lastElement != nil {
-		last_value, ok = lastElement.Value.(AlertEntry)
-	}
-
-	// here if log
-	if !ok || last_value.time_in_seconds != timestamp {
-		a.container_for_logs_sliding_window.PushBack(AlertEntry{time_in_seconds: timestamp, qty: 1})
-	} else {
-		last_value.qty++
-		lastElement.Value = last_value
-	}
-
-	a.total_hits++
+func (a *Alert) RegisterEntry(timestamp int) {
+	a.findUpperBoundAndAdd(timestamp)
 	a.resetOldEntries(timestamp)
-	return a.container_for_logs_sliding_window.Len() > a.threshold_requests_per_second*a.time_interval_for_average
 }
 
 func (a *Alert) GetAlertState() bool {
@@ -70,6 +52,59 @@ func (a *Alert) GenerateRecoveryAlertMsg(timestamp int) string {
 	triggeredTime := time.Unix(int64(timestamp), 0).UTC()
 	alertMessage := fmt.Sprintf("Traffic has recovered - hits = %.2f, recovered at %s", a.GetAverageRequestPerSecond(), triggeredTime.Format(time.RFC3339))
 	return alertMessage
+}
+
+// vector with rotaing indexes
+// for sure there hopuld be somw way to  look for an element in a sorted lit fater than 0(n)
+// non nil is required
+func (a *Alert) findUpperBoundAndAdd(timestamp int) {
+
+	//check if container is empty
+	e := a.container_for_logs_sliding_window.Front()
+	if e == nil {
+		a.container_for_logs_sliding_window.PushBack(AlertEntry{time_in_seconds: timestamp, qty: 1})
+		a.total_hits++
+		return
+	}
+	e_value, _ := e.Value.(AlertEntry)
+
+	//check if earlier than first timestamp
+	if timestamp < e_value.time_in_seconds {
+		return
+	}
+
+	//check if later or equal to the last timestamp
+	// as it's the most common case
+	last_el := a.container_for_logs_sliding_window.Back()
+	last_value, _ := last_el.Value.(AlertEntry)
+	if timestamp > last_value.time_in_seconds {
+		a.container_for_logs_sliding_window.PushBack(AlertEntry{time_in_seconds: timestamp, qty: 1})
+		a.total_hits++
+		return
+	} else if timestamp == last_value.time_in_seconds {
+		last_value.qty++
+		last_el.Value = last_value
+		a.total_hits++
+		return
+	}
+
+	//should be with in the bounds
+	for e != nil {
+		e_value = e.Value.(AlertEntry)
+		if e_value.time_in_seconds < timestamp {
+			e = e.Next()
+		} else {
+			break
+		}
+	}
+
+	if e_value.time_in_seconds == timestamp {
+		e_value.qty++
+		e.Value = e_value
+	} else {
+		a.container_for_logs_sliding_window.InsertBefore(AlertEntry{time_in_seconds: timestamp, qty: 1}, e)
+	}
+	a.total_hits++
 }
 
 func (a *Alert) resetOldEntries(timestamp int) {
