@@ -48,10 +48,12 @@ func (h *HttpLogMonitor) Start(log_file_name *string) {
 	h.display.Display()
 }
 
+// runs the monitor, dispatches data ffrom the read channel to alarm
+// and statistics, decides on when to request status from these structs
 func (h *HttpLogMonitor) run(read_channel <-chan *parser.Entity) {
 
 	alert_state := false
-	previous_report_time := 0
+	previous_report_timestamp := 0
 
 	previous_alert_state := false
 	for {
@@ -62,8 +64,8 @@ func (h *HttpLogMonitor) run(read_channel <-chan *parser.Entity) {
 			}
 			h.alert.RegisterEntry(c.Timestamp)
 			alert_state = h.alert.GetAlertState()
-			if previous_report_time == 0 {
-				previous_report_time = c.Timestamp
+			if previous_report_timestamp == 0 {
+				previous_report_timestamp = c.Timestamp
 			}
 			if alert_state != previous_alert_state {
 				if alert_state {
@@ -75,12 +77,26 @@ func (h *HttpLogMonitor) run(read_channel <-chan *parser.Entity) {
 				}
 				previous_alert_state = alert_state
 			}
-			if c.Timestamp >= previous_report_time+int(h.time_interval_stats.Seconds()) {
-				h.display.Report_chan <- h.stats.Report()
-				h.stats.Clear()
-				previous_report_time = c.Timestamp
-			}
+
+			h.doReports(&previous_report_timestamp, c.Timestamp)
 			h.stats.RegisterEntry(c)
 		}
+	}
+}
+
+// Triggers reports generation. Number of report correspond to the time past devided
+// by the specified interval
+func (h *HttpLogMonitor) doReports(previous_report_timestamp *int, new_timestamp int) {
+	interval := int(h.time_interval_stats.Seconds())
+	if new_timestamp <= *previous_report_timestamp || interval == 0 {
+		return
+	}
+	ratio := (new_timestamp - *previous_report_timestamp) / int(h.time_interval_stats.Seconds())
+	for i := 0; i < ratio; i++ {
+		h.display.Report_chan <- h.stats.Report()
+		h.stats.Clear()
+	}
+	if ratio > 0 {
+		*previous_report_timestamp = new_timestamp
 	}
 }

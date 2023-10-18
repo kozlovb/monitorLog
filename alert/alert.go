@@ -11,7 +11,6 @@ type AlertEntry struct {
 	qty             int
 }
 
-// TODO change to durationtime interval ?
 type Alert struct {
 	time_interval_for_average         int
 	threshold_requests_per_second     int
@@ -19,6 +18,7 @@ type Alert struct {
 	container_for_logs_sliding_window *list.List
 }
 
+// Creates a new Alert strut
 func NewAlert(timeInterval int, threshold int) *Alert {
 	slidingWindow := list.New()
 	return &Alert{
@@ -29,34 +29,39 @@ func NewAlert(timeInterval int, threshold int) *Alert {
 	}
 }
 
+// Regiaters a log entry timestamp in a Alert struct.
 func (a *Alert) RegisterEntry(timestamp int) {
 	a.findUpperBoundAndAdd(timestamp)
 	a.resetOldEntries(timestamp)
 }
 
+// Returns the current state of the alert.
 func (a *Alert) GetAlertState() bool {
 	return a.total_hits > a.threshold_requests_per_second*a.time_interval_for_average
 }
 
+// Returns an average number of requests per second.
 func (a *Alert) GetAverageRequestPerSecond() float64 {
 	return float64(a.total_hits) / float64(a.time_interval_for_average)
 }
 
+// Generates an alert message for a given timestamp
 func (a *Alert) GenerateAlertMsg(timestamp int) string {
 	triggeredTime := time.Unix(int64(timestamp), 0).UTC()
 	alertMessage := fmt.Sprintf("High traffic generated an alert - hits = %.2f, triggered at %s", a.GetAverageRequestPerSecond(), triggeredTime.Format(time.RFC3339))
 	return alertMessage
 }
 
+// Generates recovery message for a given timestamp
 func (a *Alert) GenerateRecoveryAlertMsg(timestamp int) string {
 	triggeredTime := time.Unix(int64(timestamp), 0).UTC()
 	alertMessage := fmt.Sprintf("Traffic has recovered - hits = %.2f, recovered at %s", a.GetAverageRequestPerSecond(), triggeredTime.Format(time.RFC3339))
 	return alertMessage
 }
 
-// vector with rotaing indexes
-// for sure there hopuld be somw way to  look for an element in a sorted lit fater than 0(n)
-// non nil is required
+// Adds a timestamp to the end if timestamp i the highest, otherwise if
+// timestamp is within window adds to the same timestamp or creates a new entry
+// before its upper bound.
 func (a *Alert) findUpperBoundAndAdd(timestamp int) {
 
 	//check if container is empty
@@ -73,7 +78,7 @@ func (a *Alert) findUpperBoundAndAdd(timestamp int) {
 		return
 	}
 
-	//check if later or equal to the last timestamp
+	// check if later or equal to the last timestamp
 	// as it's the most common case
 	last_el := a.container_for_logs_sliding_window.Back()
 	last_value, _ := last_el.Value.(AlertEntry)
@@ -107,6 +112,7 @@ func (a *Alert) findUpperBoundAndAdd(timestamp int) {
 	a.total_hits++
 }
 
+// Removes entries older than a given timestamp.
 func (a *Alert) resetOldEntries(timestamp int) {
 	for e := a.container_for_logs_sliding_window.Front(); e != nil; {
 		next := e.Next()
@@ -120,6 +126,3 @@ func (a *Alert) resetOldEntries(timestamp int) {
 		e = next
 	}
 }
-
-// 2019-02-07T21:12:36Z  - first alert
-//2019-02-07T21:16:03Z  - second alert

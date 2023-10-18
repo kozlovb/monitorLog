@@ -21,7 +21,7 @@ type Reader struct {
 func (r *Reader) Read() {
 	file, err := os.Open(*r.File_name)
 	if err != nil {
-		fmt.Println("Error opening file a parser", err)
+		fmt.Println("Error opening file", err)
 	}
 	defer file.Close()
 	defer close(r.Return_channel)

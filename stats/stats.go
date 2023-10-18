@@ -58,8 +58,13 @@ func (s *Statistics) RegisterEntry(entry *parser.Entity) {
 
 // Reports the statistics for the currently registered entries.
 func (s *Statistics) Report() *Report {
-	ip_from_max_hits, max_hits_from_this_ip := s.findMaxIPbyHits(&s.curent_max_section)
-	return &Report{Number_of_hits: s.current_max_hits, Section: s.curent_max_section, Ip_from: ip_from_max_hits, Hits_from_max_ip: max_hits_from_this_ip}
+	if len(s.curent_max_section) != 0 {
+		ip_from_max_hits, max_hits_from_this_ip := s.findMaxIPbyHits(&s.curent_max_section)
+		return &Report{Number_of_hits: s.current_max_hits, Section: s.curent_max_section, Ip_from: ip_from_max_hits, Hits_from_max_ip: max_hits_from_this_ip}
+	} else {
+		return &Report{Number_of_hits: 0, Section: s.curent_max_section, Ip_from: "", Hits_from_max_ip: 0}
+	}
+
 }
 
 // Finds an IP adresse that provided the most hits for the given section.

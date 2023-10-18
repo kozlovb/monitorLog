@@ -20,6 +20,7 @@ type Display struct {
 	Alert_chan  chan *string
 }
 
+// Listens to the report, alert and done channels
 func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text *text.Text) {
 	for {
 		select {
@@ -49,6 +50,7 @@ func (d *Display) listen(ctx context.Context, report_text *text.Text, alert_text
 	}
 }
 
+// used for debugging with VC code
 func (d *Display) debug_listen() {
 	for {
 		select {

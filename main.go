@@ -8,8 +8,8 @@ import (
 
 var (
 	log_file_name                 = flag.String("log_file_name", "sample_csv.txt", "The path to the log file")
-	time_interval_stats           = flag.Duration("time_interval_stats", 10*time.Second, "The time interval for metrics calculations")
-	time_interval_traffic_average = flag.Duration("time_interval_traffic_average", 120*time.Second, "The time interval for traffiic average calculation")
+	time_interval_stats           = flag.Duration("time_interval_stats", 10*time.Second, "The positive time interval for metrics calculations")
+	time_interval_traffic_average = flag.Duration("time_interval_traffic_average", 120*time.Second, "The positive time interval for traffiic average calculation")
 	threshold_traffic_alarm       = flag.Int("threshold_traffic_alarm", 10, "The threshold that triggers a traffic alarm")
 )
 
