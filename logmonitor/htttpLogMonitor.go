@@ -20,7 +20,7 @@ type HttpLogMonitor struct {
 	display                       display.Display
 }
 
-// Creates new HttpLogMonitor struct
+// Creates new HttpLogMonitor struct.
 func NewHttpLogMonitor(time_interval_stats time.Duration, time_interval_traffic_average time.Duration, threshold_traffic_alert int) *HttpLogMonitor {
 	report_display_chan := make(chan *stats.Report)
 	alert_chan := make(chan *string)
